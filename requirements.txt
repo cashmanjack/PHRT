@@ -1,0 +1,5 @@
+numpy
+scipy
+ripser
+pytest
+# optional: torch (GPU brute-force neighbor search, GPU filter counts), ripserplusplus (GPU reduction)
