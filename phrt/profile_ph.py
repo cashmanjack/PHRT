@@ -59,7 +59,8 @@ def profile_rips(X, r, maxdim=1, methods=("kdtree", "torch"), device="cuda", rep
         if edges is None:
             edges = (P, d)
         else:
-            assert len(P) == len(edges[0]) and np.array_equal(P, edges[0]), f"{m} disagrees on the edge set"
+            if not (len(P) == len(edges[0]) and np.array_equal(P, edges[0])):
+                raise AssertionError(f"{m} found {len(P):,} edges, {methods[0]} found {len(edges[0]):,} (r={r:.6g})")
     P, d = edges
     out["edges"] = int(len(P))
     out["avg_degree"] = 2 * len(P) / n

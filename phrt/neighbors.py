@@ -40,16 +40,18 @@ def edges_brute(X, r, chunk=1024):
     return P[o], d[o]
 
 
-def edges_torch(X, r, device="cuda", chunk=4096):
+def edges_torch(X, r, device="cuda", chunk=1024):
     """GPU brute force (fp32 distances, boundary pairs rechecked in fp64 on the host)."""
     import torch
-    Xt = torch.as_tensor(X, dtype=torch.float32, device=device)
+    # Center first (shrinks |x| and hence fp32 cancellation), use the direct-difference cdist (no
+    # |x|^2 + |y|^2 - 2xy expansion), and keep a generous margin; the fp64 recheck below is exact.
+    Xt = torch.as_tensor(X - X.mean(0), dtype=torch.float32, device=device)
     n = len(X)
-    eps = 1e-4 * max(r, 1e-12)
+    eps = 1e-3 * max(r, 1e-12) + 1e-6
     I, J = [], []
     for a in range(0, n, chunk):
         b = min(a + chunk, n)
-        d = torch.cdist(Xt[a:b], Xt)
+        d = torch.cdist(Xt[a:b], Xt, compute_mode="donot_use_mm_for_euclid_dist")
         i, j = torch.nonzero(d <= r + eps, as_tuple=True)
         keep = j > i + a
         I.append((i[keep] + a).cpu()); J.append(j[keep].cpu())
